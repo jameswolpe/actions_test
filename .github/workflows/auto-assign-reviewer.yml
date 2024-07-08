@@ -18,10 +18,13 @@ jobs:
           const { owner, repo } = context.repo;
           const issue_number = context.payload.pull_request.number;
           const reviewer = context.payload.review.user.login;
-          
-          await github.issues.addAssignees({
-            owner,
-            repo,
-            issue_number,
-            assignees: [reviewer]
-          });
+          const review_state = context.payload.review.state;
+
+          if (review_state === 'approved' || review_state === 'changes_requested') {
+            await github.issues.addAssignees({
+              owner,
+              repo,
+              issue_number,
+              assignees: [reviewer]
+            });
+          }
