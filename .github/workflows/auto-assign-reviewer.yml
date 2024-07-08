@@ -6,17 +6,31 @@ on:
 
 jobs:
   auto-assign:
-    if: github.event.review.state == 'approved' || github.event.review.state == 'changes_requested'
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [20.x]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Add reviewer as assignee
-        uses: actions-ecosystem/action-add-assignees@v1
-        with:
-          github_token: ${{ secrets.github_token }}
-          assignees: ${{ github.actor }}
+        env:
+          OWNER: ${{ github.repository_owner }}
+          REPOSITORY: ${{ github.event.repository.name }}
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PULL_REQUEST_NUMBER: ${{ github.event.pull_request.number }}
+          REVIEW_STATE: ${{ github.event.review.state }}
+          REVIEWER: ${{ github.event.review.user.login }}
+        run: |
+          if [[ "$REVIEW_STATE" == "approved" || "$REVIEW_STATE" == "changes_requested" ]]; then
+            ASSIGNEES=$(curl -s \
+              -H "Authorization: token $TOKEN" \
+              "https://api.github.com/repos/$OWNER/$REPOSITORY/issues/$PULL_REQUEST_NUMBER" | \
+              jq --raw-output '.assignees // [] | .[].login')
+
+            if [ -z "$ASSIGNEES" ]; then
+              curl -X POST \
+                -H "Content-Type: application/json" \
+                -H "Authorization: token $TOKEN" \
+                -d "{ \"assignees\": [\"${REVIEWER}\"] }" \
+                "https://api.github.com/repos/$OWNER/$REPOSITORY/issues/$PULL_REQUEST_NUMBER/assignees"
+            fi
+          fi
