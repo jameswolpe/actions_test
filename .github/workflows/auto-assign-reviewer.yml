@@ -7,12 +7,15 @@ on:
 jobs:
   auto-assign:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20.x]
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Add reviewer as assignee
-      uses: actions-ecosystem/action-add-assignees@v1
-      with:
-        github_token: ${{ secrets.github_token }}
-        assignees: ${{ github.actor }}
+      - name: Add reviewer as assignee
+        uses: actions-ecosystem/action-add-assignees@v1
+        with:
+          github_token: ${{ secrets.github_token }}
+          assignees: ${{ github.actor }}
