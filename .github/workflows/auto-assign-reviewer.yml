@@ -1,36 +1,24 @@
-name: Auto Assign on Review
+name: Add Assignees to Issue
 
 on:
-  pull_request_review:
-    types: [submitted]
+  push:
+    branches:
+      - main  # Adjust to your branch name
 
 jobs:
-  auto-assign:
+  add-assignees:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Add reviewer as assignee
-        env:
-          OWNER: ${{ github.repository_owner }}
-          REPOSITORY: ${{ github.event.repository.name }}
-          TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PULL_REQUEST_NUMBER: ${{ github.event.pull_request.number }}
-          REVIEW_STATE: ${{ github.event.review.state }}
-          REVIEWER: ${{ github.event.review.user.login }}
+      
+      - name: Add assignees to issue
         run: |
-          if [[ "$REVIEW_STATE" == "approved" || "$REVIEW_STATE" == "changes_requested" ]]; then
-            ASSIGNEES=$(curl -s \
-              -H "Authorization: token $TOKEN" \
-              "https://api.github.com/repos/$OWNER/$REPOSITORY/issues/$PULL_REQUEST_NUMBER" | \
-              jq --raw-output '.assignees // [] | .[].login')
-
-            if [ -z "$ASSIGNEES" ]; then
-              curl -X POST \
-                -H "Content-Type: application/json" \
-                -H "Authorization: token $TOKEN" \
-                -d "{ \"assignees\": [\"${REVIEWER}\"] }" \
-                "https://api.github.com/repos/$OWNER/$REPOSITORY/issues/$PULL_REQUEST_NUMBER/assignees"
-            fi
-          fi
+          gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            /repos/OWNER/REPO/issues/ISSUE_NUMBER/assignees \
+            -f "assignees[]=hubot" -f "assignees[]=other_user"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
