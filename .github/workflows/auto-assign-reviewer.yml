@@ -16,7 +16,7 @@ jobs:
 
       - name: Add assignees to issue
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_PAT: ${{ secrets.GH_PAT }}  # Use your secret name for the PAT here
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REVIEWER: ${{ github.event.review.user.login }}
         run: |
@@ -24,5 +24,6 @@ jobs:
             --method POST \
             -H "Accept: application/vnd.github+json" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
-            /repos/jameswolpe/actions_test/issues/${{ env.PR_NUMBER }}/assignees \
-            -f "assignees[]=${{ env.REVIEWER }}"
+            /repos/attentive-mobile/looker_legacy/issues/${{ env.PR_NUMBER }}/assignees \
+            -f "assignees[]=${{ env.REVIEWER }}" \
+            -H "Authorization: token $GH_PAT"
